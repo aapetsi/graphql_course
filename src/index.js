@@ -2,11 +2,68 @@ import { GraphQLServer } from 'graphql-yoga'
 
 // Scalar types - String, Boolean, Int, Float, ID,
 
+// Demo user data
+const users = [
+  {
+    id: '1',
+    name: 'Apetsi',
+    email: 'apetsi@example.com',
+    age: 29,
+  },
+  {
+    id: '2',
+    name: 'Sarah',
+    email: 'sarah@example.com',
+  },
+  {
+    id: '3',
+    name: 'Mike',
+    email: 'mike@example.com',
+  },
+]
+
+const posts = [
+  {
+    id: '10',
+    title: 'GraphQl 101',
+    body: 'This is how to use GraphQL...',
+    published: true,
+    author: '1',
+  },
+  {
+    id: '11',
+    title: 'GraphQL 201',
+    body: 'This is an advanced GraphQL post...',
+    published: false,
+    author: '1',
+  },
+  {
+    id: '12',
+    title: 'Programming Music',
+    body: '',
+    published: false,
+    author: '2',
+  },
+]
+
+const comments = [
+  {
+    id: '102',
+    text: 'This worked well for me! Thanks!',
+    author: '3',
+    post: '11',
+  },
+  { id: '103', text: 'Glad you enjoyed it!', author: '3', post: '10' },
+  { id: '104', text: 'This did not work', author: '2', post: '12' },
+  { id: '47', text: 'Never mind. I got it to work', author: '1', post: '11' },
+]
+
 // Type definitions (schema)
 const typeDefs = `
   type Query {
-    greeting(name: String, position: String): String!
-    add(a: Float!, b: Float!): Float!
+    users(query: String): [User]!
+    posts(query: String): [Post]!
+    comments: [Comment!]!
     me: User!
     post: Post!
   }
@@ -15,7 +72,9 @@ const typeDefs = `
     id: ID!
     name: String!
     email: String!
-    age: Int
+    age: Int,
+    posts: [Post!]!
+    comments: [Comment!]!
   }
 
   type Post {
@@ -23,19 +82,47 @@ const typeDefs = `
     title: String!
     body: String!
     published: Boolean!
+    author: User!
+    comments: [Comment!]!
+  }
+
+  type Comment {
+    id: ID!
+    text: String!
+    author: User!
+    post: Post!
   }
 `
 
 // Resolvers
 const resolvers = {
   Query: {
-    greeting(parent, args, ctx, info) {
-      return args.name && args.position
-        ? `Hello, ${args.name}! You are my favorite ${args.position}`
-        : 'Hello!'
+    users(parent, args, ctx, info) {
+      if (!args.query) {
+        return users
+      }
+
+      let filteredUsers = users.filter((user) =>
+        user.name.toLowerCase().includes(args.query.toLowerCase())
+      )
+
+      return filteredUsers
     },
-    add(parent, args, ctx, info) {
-      return args.a + args.b
+    posts(parent, args, ctx, info) {
+      if (!args.query) {
+        return posts
+      }
+
+      let filteredPosts = posts.filter(
+        (post) =>
+          post.title.toLowerCase().includes(args.query.toLowerCase()) ||
+          post.body.toLowerCase().includes(args.query.toLowerCase())
+      )
+
+      return filteredPosts
+    },
+    comments(parent, args, ctx, info) {
+      return comments
     },
     me() {
       return {
@@ -52,6 +139,34 @@ const resolvers = {
         body: 'lorem ipsum dolor ist amet dolr sit amet ipsum ignus',
         published: true,
       }
+    },
+  },
+  Post: {
+    author(parent, args, ctx, info) {
+      return users.find((user) => {
+        return user.id === parent.author
+      })
+    },
+    comments(parent, args, ctx, info) {
+      return comments.filter((comment) => comment.post === parent.id)
+    },
+  },
+  User: {
+    posts(parent, args, ctx, info) {
+      return posts.filter((post) => post.author === parent.id)
+    },
+    comments(parent, args, ctx, info) {
+      return comments.filter((comment) => comment.author === parent.id)
+    },
+  },
+  Comment: {
+    author(parent, args, ctx, info) {
+      return users.find((user) => {
+        return user.id === parent.author
+      })
+    },
+    post(parent, args, ctx, info) {
+      return posts.find((post) => post.id === parent.post)
     },
   },
 }
