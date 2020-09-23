@@ -6,9 +6,6 @@ import User from './resolvers/User'
 import Comment from './resolvers/Comment'
 import Post from './resolvers/Post'
 
-// Resolvers
-const resolvers = {}
-
 const server = new GraphQLServer({
   typeDefs: './src/schema.graphql',
   resolvers: {
