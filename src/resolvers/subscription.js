@@ -1,4 +1,4 @@
-const subscription = {
+const Subscription = {
   count: {
     subscribe(parent, args, { pubsub }, info) {
       let count = 0
@@ -13,6 +13,17 @@ const subscription = {
       return pubsub.asyncIterator('count')
     },
   },
+  comment: {
+    subscribe(parent, { postId }, { db, pubsub }, info) {
+      const post = db.posts.find((post) => post.id === postId && post.published)
+
+      if (!post) {
+        throw new Error('Post not found')
+      }
+
+      return pubsub.asyncIterator(`comment ${postId}`)
+    },
+  },
 }
 
-export { subscription as default }
+export { Subscription as default }
